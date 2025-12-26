@@ -3,6 +3,13 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import GUI from "lil-gui";
 
 /**
+ * Texture
+ */
+const textureLoader = new THREE.TextureLoader();
+const bakedShadow = textureLoader.load("./textures/bakedShadow.jpg");
+bakedShadow.colorSpace = THREE.SRGBColorSpace;
+
+/**
  * Base
  */
 // Debug
@@ -132,6 +139,23 @@ spotLightTweaks
   .add(spotLightCameraHelper, "visible")
   .name("Light Camera Helper");
 
+// Point Light
+const pointLight = new THREE.PointLight(0xffffff, 2.7);
+pointLight.castShadow = true;
+pointLight.position.set(-1, 1, 0);
+pointLight.shadow.mapSize.width = 1024;
+pointLight.shadow.mapSize.height = 1024;
+pointLight.shadow.camera.near = 0.1;
+pointLight.shadow.camera.far = 5;
+scene.add(pointLight);
+
+// Point Light Helper
+const pointLightCameraHelper = new THREE.CameraHelper(pointLight.shadow.camera);
+pointLightCameraHelper.visible = false;
+scene.add(pointLightCameraHelper);
+
+// Point Light Tweaks
+
 /**
  * Materials
  */
@@ -146,7 +170,10 @@ gui.add(material, "roughness").min(0).max(1).step(0.001);
 const sphere = new THREE.Mesh(new THREE.SphereGeometry(0.5, 32, 32), material);
 sphere.castShadow = true; // Enabling the sphere to cast a shadow
 
-const plane = new THREE.Mesh(new THREE.PlaneGeometry(5, 5), material);
+const plane = new THREE.Mesh(
+  new THREE.PlaneGeometry(5, 5),
+  new THREE.MeshBasicMaterial({ map: bakedShadow })
+);
 plane.rotation.x = -Math.PI * 0.5;
 plane.position.y = -0.5;
 plane.receiveShadow = true; // Enabling the plane to recieve a shadow from the sphere
@@ -209,7 +236,7 @@ const renderer = new THREE.WebGLRenderer({
 });
 renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.shadowMap.enabled = true; // Enabling the shadowMap
+renderer.shadowMap.enabled = false; // Enabling the shadowMap
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
 /**
