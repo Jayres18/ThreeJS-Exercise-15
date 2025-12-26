@@ -173,7 +173,11 @@ sphere.castShadow = true; // Enabling the sphere to cast a shadow
 const plane = new THREE.Mesh(
   new THREE.PlaneGeometry(5, 5),
   new THREE.MeshBasicMaterial({ map: bakedShadow })
-);
+); // Using bakedShadow
+// const plane = new THREE.Mesh(
+//   new THREE.PlaneGeometry(5, 5),
+//   material
+// ); // Using castShadow
 plane.rotation.x = -Math.PI * 0.5;
 plane.position.y = -0.5;
 plane.receiveShadow = true; // Enabling the plane to recieve a shadow from the sphere
