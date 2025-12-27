@@ -1,13 +1,17 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import GUI from "lil-gui";
+import { sin } from "three/tsl";
 
 /**
  * Texture
+ * You can use console.log() to check if the texture load successfully.
  */
 const textureLoader = new THREE.TextureLoader();
 const bakedShadow = textureLoader.load("./textures/bakedShadow.jpg");
 bakedShadow.colorSpace = THREE.SRGBColorSpace;
+const simpleShadow = textureLoader.load("./textures/simpleShadow.jpg");
+simpleShadow.colorSpace = THREE.SRGBColorSpace;
 
 /**
  * Base
@@ -22,6 +26,8 @@ const directionalLightTweaks = gui.addFolder("Directional Light");
 directionalLightTweaks.close();
 const spotLightTweaks = gui.addFolder("Spot Light");
 spotLightTweaks.close();
+const pointLightTweaks = gui.addFolder("Point Light");
+pointLightTweaks.close();
 
 // Canvas
 const canvas = document.querySelector("canvas.webgl");
@@ -155,6 +161,33 @@ pointLightCameraHelper.visible = false;
 scene.add(pointLightCameraHelper);
 
 // Point Light Tweaks
+pointLightTweaks
+  .add(pointLight, "intensity")
+  .min(0)
+  .max(10)
+  .step(0.001)
+  .name("Point Light Intensity");
+pointLightTweaks
+  .add(pointLight.position, "x")
+  .min(-5)
+  .max(5)
+  .step(0.001)
+  .name("Point Light X");
+pointLightTweaks
+  .add(pointLight.position, "y")
+  .min(-5)
+  .max(5)
+  .step(0.001)
+  .name("Point Light Y");
+pointLightTweaks
+  .add(pointLight.position, "z")
+  .min(-5)
+  .max(5)
+  .step(0.001)
+  .name("Point Light Z");
+pointLightTweaks
+  .add(pointLightCameraHelper, "visible")
+  .name("Light Camera Helper");
 
 /**
  * Materials
@@ -170,19 +203,30 @@ gui.add(material, "roughness").min(0).max(1).step(0.001);
 const sphere = new THREE.Mesh(new THREE.SphereGeometry(0.5, 32, 32), material);
 sphere.castShadow = true; // Enabling the sphere to cast a shadow
 
-const plane = new THREE.Mesh(
-  new THREE.PlaneGeometry(5, 5),
-  new THREE.MeshBasicMaterial({ map: bakedShadow })
-); // Using bakedShadow
 // const plane = new THREE.Mesh(
 //   new THREE.PlaneGeometry(5, 5),
-//   material
-// ); // Using castShadow
+//   new THREE.MeshBasicMaterial({ map: bakedShadow })
+// ); // Using bakedShadow
+const plane = new THREE.Mesh(new THREE.PlaneGeometry(5, 5), material); // Using castShadow
 plane.rotation.x = -Math.PI * 0.5;
 plane.position.y = -0.5;
 plane.receiveShadow = true; // Enabling the plane to recieve a shadow from the sphere
 
 scene.add(sphere, plane);
+
+// Baking Shadow Alternative
+const sphereShadow = new THREE.Mesh(
+  new THREE.PlaneGeometry(1.5, 1.5),
+  new THREE.MeshBasicMaterial({
+    color: 0x000000,
+    transparent: true,
+    alphaMap: simpleShadow,
+  })
+);
+sphereShadow.rotation.x = -Math.PI * 0.5;
+sphereShadow.position.y = plane.position.y + 0.01;
+
+scene.add(sphereShadow);
 
 /**
  * NOTES: Only the following types of lights support shadows
@@ -250,6 +294,16 @@ const clock = new THREE.Clock();
 
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
+
+  // Update the Sphere
+  sphere.position.x = Math.cos(elapsedTime) * 1.5;
+  sphere.position.z = Math.sin(elapsedTime) * 1.5;
+  sphere.position.y = Math.abs(Math.sin(elapsedTime * 3));
+
+  // Update the Shadow
+  sphereShadow.position.x = sphere.position.x;
+  sphereShadow.position.z = sphere.position.z;
+  sphereShadow.material.opacity = (1 - sphere.position.y) * 0.3;
 
   // Update controls
   controls.update();
